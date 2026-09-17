@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R&D Idea Engine — MainbyteLabs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --base:#0A0F1E;--surface:#111827;--surface2:#1C2B4A;--border:#243050;
+    --text:#E8EDF5;--text-muted:#6B7FA3;--accent:#00C2FF;--accent-dim:#00578A;
+    --amber:#F5A623;--amber-dim:#7A5210;--red:#FF4D6A;--red-dim:#5C1A27;
+    --green:#00E5A0;--green-dim:#004D38;--mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--base);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+  .brand{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.05em}
+  .brand span{color:var(--text-muted)}
+  .provider-badge{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid var(--green-dim);color:var(--green)}
+  .phase-indicator{display:flex;gap:8px;align-items:center}
+  .phase-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .3s}
+  .phase-dot.active{background:var(--accent)}.phase-dot.done{background:var(--green)}
+  .phase-label{font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-left:4px}
+  .workspace{display:grid;grid-template-columns:340px 1fr;flex:1;min-height:0;overflow:hidden}
+  .left-panel{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;background:var(--surface)}
+  .panel-section{padding:20px;border-bottom:1px solid var(--border)}
+  .panel-section:last-child{border-bottom:none;flex:1}
+  .section-label{font-family:var(--mono);font-size:10px;color:var(--text-muted);letter-spacing:.1em;margin-bottom:12px;text-transform:uppercase}
+  input[type="text"],textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:10px 12px;outline:none;transition:border-color .2s;resize:none}
+  input[type="text"]:focus,textarea:focus{border-color:var(--accent)}
+  input::placeholder,textarea::placeholder{color:var(--text-muted)}
+  .focus-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .focus-tag{padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;color:var(--text-muted);cursor:pointer;transition:all .2s;font-family:var(--mono)}
+  .focus-tag.selected{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+  .focus-tag:hover:not(.selected){border-color:var(--text-muted);color:var(--text)}
+  .paste-only-notice{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--text-muted);font-family:var(--mono);margin-bottom:14px}
+  .paste-only-notice span{color:var(--amber)}
+  .btn-primary{width:100%;padding:11px;border-radius:6px;border:none;background:var(--accent);color:var(--base);font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:opacity .2s;margin-top:14px}
+  .btn-primary:hover:not(:disabled){opacity:.85}.btn-primary:disabled{opacity:.35;cursor:not-allowed}
+  .btn-secondary{padding:8px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .2s}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-stress{width:100%;padding:11px;border-radius:6px;border:1px solid var(--amber);background:transparent;color:var(--amber);font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:all .2s;margin-top:10px}
+  .btn-stress:hover:not(:disabled){background:var(--amber-dim)}.btn-stress:disabled{opacity:.35;cursor:not-allowed}
+  .selection-status{font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:10px;display:none}
+  .selection-status.visible{display:block}.selection-status strong{color:var(--amber)}
+  .right-panel{display:flex;flex-direction:column;overflow:hidden}
+  .output-header{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--surface)}
+  .output-title{font-family:var(--mono);font-size:12px;color:var(--text-muted)}
+  .output-body{flex:1;overflow-y:auto;padding:24px}
+  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-muted);text-align:center}
+  .empty-icon{font-size:36px;opacity:.3}.empty-state p{max-width:300px;font-size:13px}
+  .loading-state{display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--text-muted)}
+  .loading-state.visible{display:flex}
+  .spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-msg{font-family:var(--mono);font-size:12px;color:var(--accent)}.loading-sub{font-size:12px}
+  .ideas-container{display:none;flex-direction:column;gap:16px}.ideas-container.visible{display:flex}
+  .idea-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .2s;background:var(--surface)}
+  .idea-card:hover{border-color:var(--text-muted)}
+  .idea-card.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,var(--surface))}
+  .idea-card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
+  .idea-number{font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-right:10px;flex-shrink:0}
+  .idea-title{font-weight:600;font-size:14px;flex:1}
+  .idea-select-indicator{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .2s;margin-left:10px}
+  .idea-card.selected .idea-select-indicator{background:var(--accent);border-color:var(--accent);color:var(--base)}
+  .idea-card-body{padding:0 16px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .idea-field{display:flex;flex-direction:column;gap:3px}
+  .idea-field-label{font-family:var(--mono);font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
+  .idea-field-value{font-size:12px;color:var(--text)}
+  .diff-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:10px;font-weight:600}
+  .diff-1,.diff-2{background:var(--green-dim);color:var(--green)}.diff-3{background:var(--amber-dim);color:var(--amber)}.diff-4,.diff-5{background:var(--red-dim);color:var(--red)}
+  .stress-container{display:none;flex-direction:column;gap:20px}.stress-container.visible{display:flex}
+  .stress-summary{padding:16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;line-height:1.6;margin-bottom:4px}
+  .stress-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface)}
+  .stress-card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+  .verdict-badge{padding:4px 12px;border-radius:4px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em}
+  .verdict-build{background:var(--green-dim);color:var(--green)}.verdict-delay{background:var(--amber-dim);color:var(--amber)}.verdict-drop{background:var(--red-dim);color:var(--red)}
+  .stress-card-body{padding:16px;display:flex;flex-direction:column;gap:14px}
+  .stress-section{display:flex;flex-direction:column;gap:6px}
+  .stress-section-label{font-family:var(--mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
+  .stress-section-text{font-size:13px;line-height:1.55}
+  .score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .score-item{display:flex;flex-direction:column;gap:4px}
+  .score-item-label{font-family:var(--mono);font-size:9px;color:var(--text-muted)}
+  .score-bar-wrap{height:4px;background:var(--border);border-radius:2px}
+  .score-bar{height:100%;border-radius:2px;background:var(--accent)}.score-bar.friction{background:var(--red)}
+  .score-value{font-family:var(--mono);font-size:11px;color:var(--text)}
+  .final-score-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:6px;background:var(--surface2);font-family:var(--mono);font-size:13px}
+  .final-score-row strong{color:var(--accent);font-size:18px}
+  .exec-step{display:flex;gap:10px;align-items:flex-start;font-size:12px;line-height:1.5}
+  .exec-step-num{font-family:var(--mono);font-size:10px;color:var(--accent);flex-shrink:0;margin-top:2px;min-width:24px}
+  .ranking-table{width:100%;border-collapse:collapse}
+  .ranking-table th{font-family:var(--mono);font-size:10px;color:var(--text-muted);text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.06em}
+  .ranking-table td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:top}
+  .ranking-table tr:last-child td{border-bottom:none}.rank-num{font-family:var(--mono);color:var(--text-muted)}
+  .error-state{padding:16px;border:1px solid var(--red);border-radius:8px;background:var(--red-dim);font-size:13px;color:var(--red);display:none}
+  .error-state.visible{display:block}
+  ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  @media(max-width:700px){.workspace{grid-template-columns:1fr}.left-panel{border-right:none;border-bottom:1px solid var(--border);max-height:50vh}.idea-card-body{grid-template-columns:1fr}.score-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">MAINBYTELABS <span>/</span> R&D IDEA ENGINE</div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <div class="provider-badge">Ollama — Local</div>
+    <div class="phase-indicator">
+      <div class="phase-dot active" id="dot-1"></div>
+      <div class="phase-dot" id="dot-2"></div>
+      <div class="phase-dot" id="dot-3"></div>
+      <div class="phase-label" id="phase-label">RESEARCH</div>
+    </div>
+  </div>
+</header>
+
+<div class="workspace">
+  <div class="left-panel">
+    <div class="panel-section">
+      <div class="paste-only-notice"><span>Paste Mode only.</span> Local models do not have web search. Paste your own research below.</div>
+      <div class="section-label">Your Research</div>
+      <textarea id="paste-input" rows="7" placeholder="Paste product specs, articles, competitor analysis, or any research here..."></textarea>
+      <input type="text" id="paste-target" placeholder="Product / company name" style="margin-top:8px"/>
+    </div>
+    <div class="panel-section">
+      <div class="section-label">Local Model</div>
+      <input type="text" id="model-input" value="llama3" placeholder="e.g. llama3, mistral, gemma"/>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:6px">Must be pulled: ollama pull llama3</div>
+    </div>
+    <div class="panel-section">
+      <div class="section-label">R&D Focus Areas</div>
+      <div class="focus-tags">
+        <div class="focus-tag selected" data-tag="performance">Performance</div>
+        <div class="focus-tag selected" data-tag="efficiency">Efficiency</div>
+        <div class="focus-tag selected" data-tag="features">Features</div>
+        <div class="focus-tag" data-tag="cost">Cost Reduction</div>
+        <div class="focus-tag" data-tag="reliability">Reliability</div>
+        <div class="focus-tag" data-tag="software">Software/Firmware</div>
+        <div class="focus-tag" data-tag="integration">Integration</div>
+        <div class="focus-tag" data-tag="manufacturing">Manufacturing</div>
+        <div class="focus-tag" data-tag="safety">Safety</div>
+        <div class="focus-tag" data-tag="ux">UX / Interfaces</div>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="section-label">Idea Count</div>
+      <select id="idea-count">
+        <option value="6">6 ideas</option>
+        <option value="8" selected>8 ideas</option>
+        <option value="10">10 ideas</option>
+      </select>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:6px">Keep lower for local models — higher counts increase parse errors</div>
+      <button class="btn-primary" id="generate-btn" onclick="generateIdeas()">Generate Ideas →</button>
+      <div class="selection-status" id="selection-status"><strong id="selected-count">0</strong> ideas selected for stress test</div>
+      <button class="btn-stress" id="stress-btn" onclick="runStressTest()" disabled>Run Stress Test →</button>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="output-header">
+      <div class="output-title" id="output-title"><strong>Output</strong> — waiting for input</div>
+      <button class="btn-secondary" id="reset-btn" onclick="resetAll()" style="display:none">Reset</button>
+    </div>
+    <div class="output-body">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">◈</div>
+        <p>Paste your research, enter the product name, and select focus areas.</p>
+        <p>All processing runs locally on your machine via Ollama. No internet required after setup.</p>
+      </div>
+      <div class="loading-state" id="loading-state">
+        <div class="spinner"></div>
+        <div class="loading-msg" id="loading-msg">Generating ideas...</div>
+        <div class="loading-sub" id="loading-sub">Local model — this may take longer than cloud versions</div>
+      </div>
+      <div class="error-state" id="error-state"></div>
+      <div class="ideas-container" id="ideas-container"></div>
+      <div class="stress-container" id="stress-container"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = 'http://localhost:5050/v1/chat';
+let selectedIdeas = [];
+let generatedIdeas = [];
+
+document.querySelectorAll('.focus-tag').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('selected')));
+function getSelectedFocusAreas(){return[...document.querySelectorAll('.focus-tag.selected')].map(t=>t.dataset.tag);}
+
+function setPhase(n){
+  const labels=['RESEARCH','SELECT IDEAS','STRESS TEST'];
+  for(let i=1;i<=3;i++){const d=document.getElementById(`dot-${i}`);d.classList.remove('active','done');if(i<n)d.classList.add('done');else if(i===n)d.classList.add('active');}
+  document.getElementById('phase-label').textContent=labels[n-1];
+}
+
+function showOnly(id){
+  ['empty-state','loading-state','ideas-container','stress-container','error-state'].forEach(x=>{const el=document.getElementById(x);el.classList.remove('visible');el.style.display='';});
+  const t=document.getElementById(id);
+  if(id==='loading-state')t.style.display='flex';else if(id==='empty-state')t.style.display='flex';else t.classList.add('visible');
+}
+
+function setLoadingMsg(msg,sub){document.getElementById('loading-msg').textContent=msg;document.getElementById('loading-sub').textContent=sub||'';}
+function showError(msg){const el=document.getElementById('error-state');el.textContent=msg;el.classList.add('visible');}
+
+async function callOllama(systemMsg, userMsg) {
+  const model = document.getElementById('model-input').value.trim() || 'llama3';
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      model,
+      messages: [
+        {role: 'system', content: systemMsg},
+        {role: 'user', content: userMsg}
+      ]
+    })
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(()=>({}));
+    throw new Error(err.error || `Proxy error ${response.status}`);
+  }
+  const data = await response.json();
+  return data.content || '';
+}
+
+async function generateIdeas() {
+  const focusAreas = getSelectedFocusAreas();
+  if (!focusAreas.length) { alert('Select at least one focus area.'); return; }
+  const target = document.getElementById('paste-target').value.trim() || 'the product';
+  const research = document.getElementById('paste-input').value.trim();
+  if (!research) { alert('Paste your research first.'); return; }
+  const ideaCount = document.getElementById('idea-count').value;
+
+  document.getElementById('generate-btn').disabled = true;
+  document.getElementById('reset-btn').style.display = 'none';
+  document.getElementById('output-title').innerHTML = `<strong>Generating</strong> — ${target}`;
+  selectedIdeas = []; generatedIdeas = []; updateSelectionStatus();
+  setPhase(1); showOnly('loading-state');
+  setLoadingMsg('Generating ideas...', 'Local model — this may take a minute');
+
+  try {
+    const systemPrompt = `You are an R&D strategist. Generate exactly ${ideaCount} distinct R&D improvement ideas. Focus: ${focusAreas.join(', ')}.
+Return ONLY a valid JSON array. No explanation. No markdown. Start with [ end with ].
+Each item: {"title":"","domain":"","description":"2 sentences","difficulty":3,"dependencies":"","estimated_time":"","visible_result":"","smallest_version":"","why_interesting":"","scope_risk":"low","connects_to":""}`;
+
+    const raw = await callOllama(systemPrompt, `Target: ${target}\n\nResearch:\n${research}\n\nJSON array only. ${ideaCount} ideas.`);
+    let ideas;
+    try {
+      const c = raw.replace(/```json|```/g,'').trim();
+      ideas = JSON.parse(c.substring(c.indexOf('['), c.lastIndexOf(']')+1));
+    } catch(e) {
+      throw new Error('Could not parse idea list. Local models sometimes produce malformed JSON — try again or reduce idea count.');
+    }
+    generatedIdeas = ideas;
+    renderIdeas(ideas, target);
+    setPhase(2);
+    document.getElementById('output-title').innerHTML = `<strong>${ideas.length} Ideas</strong> — ${target} — select ideas to stress test`;
+    document.getElementById('reset-btn').style.display = 'block';
+  } catch(err) {
+    showOnly('error-state');
+    showError(`Error: ${err.message}`);
+  } finally {
+    document.getElementById('generate-btn').disabled = false;
+  }
+}
+
+function renderIdeas(ideas) {
+  const c = document.getElementById('ideas-container'); c.innerHTML = '';
+  ideas.forEach((idea, i) => {
+    const card = document.createElement('div'); card.className = 'idea-card'; card.onclick = ()=>toggleIdea(i,card);
+    card.innerHTML = `<div class="idea-card-header"><span class="idea-number">${String(i+1).padStart(2,'0')}</span><span class="idea-title">${escHtml(idea.title)}</span><div class="idea-select-indicator">✓</div></div>
+    <div style="padding:0 16px 4px"><span class="diff-badge diff-${idea.difficulty||3}">Difficulty ${idea.difficulty||'?'}/5</span><span style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-left:8px">${escHtml(idea.domain||'')}</span><span style="font-family:var(--mono);font-size:10px;margin-left:8px;color:${idea.scope_risk==='high'?'var(--red)':idea.scope_risk==='medium'?'var(--amber)':'var(--green)'}">● ${idea.scope_risk||'medium'} scope risk</span></div>
+    <div class="idea-card-body"><div class="idea-field" style="grid-column:1/-1"><div class="idea-field-label">Description</div><div class="idea-field-value" style="color:var(--text-muted)">${escHtml(idea.description||'')}</div></div><div class="idea-field"><div class="idea-field-label">Time Estimate</div><div class="idea-field-value">${escHtml(idea.estimated_time||'')}</div></div><div class="idea-field"><div class="idea-field-label">Visible Result</div><div class="idea-field-value">${escHtml(idea.visible_result||'')}</div></div><div class="idea-field" style="grid-column:1/-1"><div class="idea-field-label">Smallest Working Version</div><div class="idea-field-value">${escHtml(idea.smallest_version||'')}</div></div></div>`;
+    c.appendChild(card);
+  });
+  showOnly('ideas-container');
+}
+
+function toggleIdea(index,card){const idx=selectedIdeas.indexOf(index);if(idx===-1){selectedIdeas.push(index);card.classList.add('selected');}else{selectedIdeas.splice(idx,1);card.classList.remove('selected');}updateSelectionStatus();}
+function updateSelectionStatus(){document.getElementById('selected-count').textContent=selectedIdeas.length;document.getElementById('selection-status').classList.toggle('visible',generatedIdeas.length>0);document.getElementById('stress-btn').disabled=selectedIdeas.length===0;}
+
+async function runStressTest() {
+  const ideas = selectedIdeas.map(i=>generatedIdeas[i]);
+  const target = document.getElementById('paste-target').value.trim()||'the product';
+  document.getElementById('stress-btn').disabled = true;
+  document.getElementById('output-title').innerHTML = `<strong>Stress Testing</strong> — ${selectedIdeas.length} ideas`;
+  setPhase(3); showOnly('loading-state');
+  setLoadingMsg('Running stress test...','Local model — may take several minutes for multiple ideas');
+
+  try {
+    const systemPrompt = `You are a technical evaluator. Stress test each R&D idea honestly.
+Return ONLY valid JSON. No markdown. No explanation.
+Structure: {"summary":"","evaluations":[{"title":"","verdict":"BUILD NOW|DELAY|DROP","reality_check":"","motivation_collapse":"","hidden_complexity":"","value_analysis":"","scope_classification":"TOO BIG|TOO SMALL|MISCOPED|VALID","simplified_versions":{"two_to_five_hours":"","one_day":"","mvp":""},"execution_risks":[""],"scores":{"execution_likelihood":5,"learning_value":5,"reusability":5,"clarity":5,"visible_progress":5,"scope_control":5,"setup_friction":3,"debugging_friction":3,"maintenance_friction":3},"final_score":17,"execution_plan":{"hour_1":"","first_file":"","done_means":"","do_not_add":"","stall_risk":""}}],"ranking":[{"rank":1,"title":"","verdict":"","main_risk":""}]}`;
+
+    const raw = await callOllama(systemPrompt, `Target: ${target}\n\nIdeas:\n${JSON.stringify(ideas,null,2)}\n\nJSON only.`);
+    let result;
+    try {
+      const c = raw.replace(/```json|```/g,'').trim();
+      result = JSON.parse(c.substring(c.indexOf('{'), c.lastIndexOf('}')+1));
+    } catch(e) {
+      throw new Error('Could not parse stress test results. Local models sometimes produce malformed JSON — try again with fewer ideas selected.');
+    }
+    renderStressResults(result);
+    document.getElementById('output-title').innerHTML = `<strong>Stress Test Complete</strong> — ${selectedIdeas.length} ideas evaluated`;
+  } catch(err) {
+    showOnly('error-state');
+    showError(`Error: ${err.message}`);
+  } finally {
+    document.getElementById('stress-btn').disabled = false;
+  }
+}
+
+function renderStressResults(result) {
+  const c = document.getElementById('stress-container'); c.innerHTML='';
+  if(result.summary){const s=document.createElement('div');s.className='stress-summary';s.innerHTML=`<div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Evaluation Summary</div>${escHtml(result.summary)}`;c.appendChild(s);}
+  (result.evaluations||[]).forEach(ev=>{
+    const vc=ev.verdict?.includes('BUILD')?'verdict-build':ev.verdict?.includes('DROP')?'verdict-drop':'verdict-delay';
+    const s=ev.scores||{};
+    const eS=['execution_likelihood','learning_value','reusability','clarity','visible_progress','scope_control'];
+    const fS=['setup_friction','debugging_friction','maintenance_friction'];
+    const card=document.createElement('div');card.className='stress-card';
+    card.innerHTML=`<div class="stress-card-header"><div style="font-weight:600;font-size:14px">${escHtml(ev.title)}</div><span class="verdict-badge ${vc}">${escHtml(ev.verdict||'DELAY')}</span></div>
+    <div class="stress-card-body">
+      <div class="stress-section"><div class="stress-section-label">Reality Check</div><div class="stress-section-text">${escHtml(ev.reality_check||'')}</div></div>
+      <div class="stress-section"><div class="stress-section-label">Motivation Collapse Point</div><div class="stress-section-text" style="color:var(--amber)">${escHtml(ev.motivation_collapse||'')}</div></div>
+      <div class="stress-section"><div class="stress-section-label">Hidden Complexity</div><div class="stress-section-text">${escHtml(ev.hidden_complexity||'')}</div></div>
+      <div class="stress-section"><div class="stress-section-label">Value Analysis</div><div class="stress-section-text">${escHtml(ev.value_analysis||'')}</div></div>
+      <div class="stress-section"><div class="stress-section-label">Scope Classification</div><div class="stress-section-text" style="font-family:var(--mono);font-size:12px">${escHtml(ev.scope_classification||'')}</div></div>
+      ${ev.simplified_versions?`<div class="stress-section"><div class="stress-section-label">Simplified Versions</div><div style="display:flex;flex-direction:column;gap:6px;margin-top:4px"><div><span style="font-family:var(--mono);font-size:10px;color:var(--text-muted)">2–5 HRS:</span> <span style="font-size:12px">${escHtml(ev.simplified_versions.two_to_five_hours||'')}</span></div><div><span style="font-family:var(--mono);font-size:10px;color:var(--text-muted)">1 DAY:</span> <span style="font-size:12px">${escHtml(ev.simplified_versions.one_day||'')}</span></div><div><span style="font-family:var(--mono);font-size:10px;color:var(--text-muted)">MVP:</span> <span style="font-size:12px">${escHtml(ev.simplified_versions.mvp||'')}</span></div></div></div>`:''}
+      <div class="stress-section"><div class="stress-section-label">Scores</div>
+        <div class="score-grid">${eS.map(k=>`<div class="score-item"><div class="score-item-label">${k.replace(/_/g,' ')}</div><div class="score-bar-wrap"><div class="score-bar" style="width:${(s[k]||0)*10}%"></div></div><div class="score-value">${s[k]||0}/10</div></div>`).join('')}</div>
+        <div style="margin-top:10px;margin-bottom:4px;font-family:var(--mono);font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em">Friction</div>
+        <div class="score-grid">${fS.map(k=>`<div class="score-item"><div class="score-item-label">${k.replace(/_/g,' ')}</div><div class="score-bar-wrap"><div class="score-bar friction" style="width:${(s[k]||0)*10}%"></div></div><div class="score-value">${s[k]||0}/10</div></div>`).join('')}</div>
+        <div class="final-score-row" style="margin-top:12px"><span>Final Score</span><strong>${ev.final_score??'—'}</strong></div>
+      </div>
+      ${ev.execution_risks?.length?`<div class="stress-section"><div class="stress-section-label">Execution Risks</div><div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">${ev.execution_risks.map(r=>`<div style="font-size:12px;display:flex;gap:8px"><span style="color:var(--red);flex-shrink:0">▲</span>${escHtml(r)}</div>`).join('')}</div></div>`:''}
+      ${ev.execution_plan?`<div class="stress-section"><div class="stress-section-label">Execution Plan</div><div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">${[['Hour 1',ev.execution_plan.hour_1],['First File',ev.execution_plan.first_file],['Done Means',ev.execution_plan.done_means],['Do NOT Add',ev.execution_plan.do_not_add],['Stall Risk',ev.execution_plan.stall_risk]].filter(([,v])=>v).map(([l,v])=>`<div class="exec-step"><div class="exec-step-num">${l}</div><div>${escHtml(v)}</div></div>`).join('')}</div></div>`:''}
+    </div>`;
+    c.appendChild(card);
+  });
+  if(result.ranking?.length){const r=document.createElement('div');r.className='stress-card';r.innerHTML=`<div class="stress-card-header"><div style="font-weight:600;font-size:14px">Final Rankings</div></div><div style="padding:16px"><table class="ranking-table"><thead><tr><th>#</th><th>Idea</th><th>Verdict</th><th>Main Risk</th></tr></thead><tbody>${result.ranking.map(r=>{const vc=r.verdict?.includes('BUILD')?'verdict-build':r.verdict?.includes('DROP')?'verdict-drop':'verdict-delay';return`<tr><td class="rank-num">${r.rank}</td><td style="font-weight:500">${escHtml(r.title||'')}</td><td><span class="verdict-badge ${vc}" style="font-size:10px">${escHtml(r.verdict||'')}</span></td><td style="color:var(--text-muted)">${escHtml(r.main_risk||'')}</td></tr>`;}).join('')}</tbody></table></div>`;c.appendChild(r);}
+  showOnly('stress-container');
+}
+
+function resetAll(){selectedIdeas=[];generatedIdeas=[];setPhase(1);showOnly('empty-state');document.getElementById('output-title').innerHTML=`<strong>Output</strong> — waiting for input`;document.getElementById('reset-btn').style.display='none';document.getElementById('stress-btn').disabled=true;updateSelectionStatus();}
+function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
