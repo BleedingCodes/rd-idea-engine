@@ -6,6 +6,17 @@ Execution-focused R&D research and stress-test tool. Point it at any company or 
 
 ---
 
+## ⚠️ Testing Status
+
+This tool has three options (A, B, C). **Only Option C (Ollama — Local) has been tested.**
+
+Testing was carried out to the point of input submission and processing initiation.
+Output generation has not been verified. Options A (OpenAI browser) and B (Anthropic CLI)
+are untested.
+
+Use at your own risk. Feedback and test reports welcome — open an issue if you run it
+further than I did.
+
 ## Package Structure
 
 ```
